@@ -1,0 +1,6 @@
+@effectServiceAPI_HostAddress = http://localhost:5115
+
+GET {{effectServiceAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
