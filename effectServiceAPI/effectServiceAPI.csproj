@@ -13,5 +13,14 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Pages\AllEffects\AllEffects.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\CreateAuctionFromEffect\CreateAuctionFromEffect.cshtml" />
+  </ItemGroup>
+
   
 </Project>
