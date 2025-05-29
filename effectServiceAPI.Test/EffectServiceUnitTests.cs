@@ -10,10 +10,10 @@ using auctionServiceAPI.Controllers;
 using auctionServiceAPI.Services;
 using effectServiceAPI.Model;
 
-namespace auctionServiceAPI.Tests.Services
+namespace effectServiceAPI.Tests.Services
 {
     [TestFixture]
-    public class EffectServiceTests
+    public class EffectServiceUnitTests
     {
         private Mock<ILogger<EffectController>> _mockLogger;
         private Mock<IEffectService> _mockEffectService;
@@ -23,6 +23,7 @@ namespace auctionServiceAPI.Tests.Services
         [SetUp]
         public void Setup()
         {
+            // Arrange: Initialiserer mocks og controller før hver test
             _mockLogger = new Mock<ILogger<EffectController>>();
             _mockEffectService = new Mock<IEffectService>();
             _mockConfig = new Mock<IConfiguration>();
@@ -34,14 +35,17 @@ namespace auctionServiceAPI.Tests.Services
         [Test]
         public async Task GetAllEffects_ShouldReturnOkWithEffects()
         {
+            // Arrange: Setup af mocked data
             var effects = new List<Effect>
             {
                 new() { EffectId = Guid.NewGuid(), Title = "Effect 1" }
             };
             _mockEffectService.Setup(s => s.GetAllEffectsAsync()).ReturnsAsync(effects);
 
+            // Act: Kald til controller-metoden
             var result = await _controller.GetAllEffects();
 
+            // Assert: Kontroller at resultatet er korrekt
             var okResult = result.Result as OkObjectResult;
             Assert.IsInstanceOf<OkObjectResult>(result.Result);
             Assert.AreEqual(effects, okResult?.Value);
@@ -50,12 +54,15 @@ namespace auctionServiceAPI.Tests.Services
         [Test]
         public async Task GetEffect_ShouldReturnEffect_WhenExists()
         {
+            // Arrange
             var id = Guid.NewGuid();
             var effect = new Effect { EffectId = id, Title = "Test" };
             _mockEffectService.Setup(s => s.GetEffectAsync(id)).ReturnsAsync(effect);
 
+            // Act
             var result = await _controller.GetEffect(id);
 
+            // Assert
             var okResult = result.Result as OkObjectResult;
             Assert.IsInstanceOf<OkObjectResult>(result.Result);
             Assert.AreEqual(effect, okResult?.Value);
@@ -64,17 +71,21 @@ namespace auctionServiceAPI.Tests.Services
         [Test]
         public async Task GetEffect_ShouldReturnNotFound_WhenMissing()
         {
+            // Arrange
             var id = Guid.NewGuid();
             _mockEffectService.Setup(s => s.GetEffectAsync(id)).ReturnsAsync((Effect?)null);
 
+            // Act
             var result = await _controller.GetEffect(id);
 
+            // Assert
             Assert.IsInstanceOf<NotFoundResult>(result.Result);
         }
 
         [Test]
         public async Task CreateEffect_ShouldReturnCreated_WhenValidEffect()
         {
+            // Arrange
             var effect = new Effect
             {
                 EffectId = Guid.NewGuid(),
@@ -86,8 +97,10 @@ namespace auctionServiceAPI.Tests.Services
                 .Setup(s => s.CreateEffectAsync(It.IsAny<Effect>()))
                 .ReturnsAsync(effect.EffectId);
 
+            // Act
             var result = await _controller.CreateEffect(effect, null);
 
+            // Assert
             var createdResult = result.Result as CreatedAtActionResult;
             Assert.IsInstanceOf<CreatedAtActionResult>(result.Result);
             Assert.AreEqual(nameof(_controller.GetEffect), createdResult?.ActionName);
@@ -97,6 +110,7 @@ namespace auctionServiceAPI.Tests.Services
         [Test]
         public async Task TransferToAuction_ShouldReturnOk_WhenSuccess()
         {
+            // Arrange
             var id = Guid.NewGuid();
             var effect = new Effect
             {
@@ -107,11 +121,35 @@ namespace auctionServiceAPI.Tests.Services
             _mockEffectService.Setup(s => s.GetEffectAsync(id)).ReturnsAsync(effect);
             _mockEffectService.Setup(s => s.TransferToAuctionAsync(id)).ReturnsAsync(true);
 
+            // Act
             var result = await _controller.TransferToAuction(id);
 
+            // Assert
             var okResult = result as OkObjectResult;
             Assert.IsInstanceOf<OkObjectResult>(result);
             Assert.AreEqual("Effect successfully transferred to auction", okResult?.Value);
         }
+        
+        [Test]
+        public async Task TransferToAuction_ShouldReturnBadRequest_WhenTransferFails()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var effect = new Effect
+            {
+                EffectId = id,
+                EffectStatus = EffectStatus.Sold // Kan ikke overføres måske
+            };
+
+            _mockEffectService.Setup(s => s.GetEffectAsync(id)).ReturnsAsync(effect);
+            _mockEffectService.Setup(s => s.TransferToAuctionAsync(id)).ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.TransferToAuction(id);
+
+            // Assert
+            Assert.IsInstanceOf<BadRequestObjectResult>(result);
+        }
+
     }
 }
