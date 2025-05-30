@@ -28,7 +28,25 @@ logger.LogInformation("EffectService: Attempting to configure Vault...");
 string vaultAddress = builder.Configuration["Vault:Address"] ?? "https://vaulthost:8201";
 string vaultToken = builder.Configuration["Vault:Token"];
 
+
+// Configure CORS policy to allow your frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:8080")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+// Create globally availabel HttpClient for accesing the gateway.
+var gatewayUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:4000";
+builder.Services.AddHttpClient("gateway", client =>
+
 if (string.IsNullOrEmpty(vaultToken))
+
 {
     logger.LogError("EffectService: Vault:Token is NOT configured in environment variables. Cannot authenticate with Vault. Ensure Vault__Token is set in docker-compose.yml.");
     throw new InvalidOperationException("Vault token is not configured. Application cannot start.");
@@ -55,6 +73,14 @@ IVaultClient vaultClient = new VaultClient(vaultClientSettings);
 
 try
 {
+
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+// CORS middleware must be early in the pipeline
+app.UseCors("AllowFrontend");
+app.UseStaticFiles();
+
     logger.LogInformation("EffectService: Fetching JWT parameters from Vault path 'Secrets'...");
     Secret<SecretData> jwtParamsSecret = await vaultClient.V1.Secrets.KeyValue.V2.ReadSecretAsync(
         path: "Secrets",
@@ -84,6 +110,7 @@ try
     string? mongoConnectionString = connectionParamsSecret.Data.Data["mongoConnectionString"]?.ToString();
     string? mongoDbName = connectionParamsSecret.Data.Data["MongoDbDatabaseName"]?.ToString();
     string? authServiceUrl = connectionParamsSecret.Data.Data["AuthServiceUrl"]?.ToString();
+
 
     if (string.IsNullOrEmpty(mongoConnectionString))
         throw new InvalidOperationException("mongoConnectionString not found in Vault at secret/Connections.");
