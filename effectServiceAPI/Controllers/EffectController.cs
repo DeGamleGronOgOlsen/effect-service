@@ -1,5 +1,6 @@
 ﻿using auctionServiceAPI.Services;
 using effectServiceAPI.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace auctionServiceAPI.Controllers
@@ -31,14 +32,16 @@ namespace auctionServiceAPI.Controllers
             _logger.LogInformation($"Effect Service responding from {_serviceIp}");
         }
 
-        [HttpGet]
+        [Authorize(Roles = "admin")]
+        [HttpGet("GetAllEffect")]
         public async Task<ActionResult<IEnumerable<Effect>>> GetAllEffects()
         {
             _logger.LogInformation($"Getting all effects from {_serviceIp}");
             var effects = await _effectService.GetAllEffectsAsync();
             return Ok(effects);
         }
-
+        
+        [Authorize(Roles = "admin")]
         [HttpGet("{id}")]
         public async Task<ActionResult<Effect>> GetEffect(Guid id)
         {
@@ -53,6 +56,7 @@ namespace auctionServiceAPI.Controllers
             return Ok(effect);
         }
 
+        [Authorize(Roles = "admin")]
         [HttpPost]
         public async Task<ActionResult<Effect>> CreateEffect([FromForm] Effect effect, IFormFile? image)
         {
@@ -100,7 +104,7 @@ namespace auctionServiceAPI.Controllers
                 return StatusCode(500, "An error occurred while creating the effect.");
             }
         }
-
+        [Authorize(Roles = "admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEffect(Guid id, [FromForm] Effect effect, IFormFile? image)
         {
@@ -158,6 +162,7 @@ namespace auctionServiceAPI.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEffect(Guid id)
         {
@@ -182,7 +187,8 @@ namespace auctionServiceAPI.Controllers
             await _effectService.DeleteEffectAsync(id);
             return NoContent();
         }
-
+        
+        [Authorize(Roles = "admin")]
         [HttpGet("status/{status}")]
         public async Task<ActionResult<IEnumerable<Effect>>> GetEffectsByStatus(EffectStatus status)
         {
@@ -191,6 +197,7 @@ namespace auctionServiceAPI.Controllers
             return Ok(effects);
         }
 
+        [Authorize(Roles = "admin")]
         [HttpGet("seller/{sellerId}")]
         public async Task<ActionResult<IEnumerable<Effect>>> GetEffectsBySeller(Guid sellerId)
         {
@@ -199,6 +206,7 @@ namespace auctionServiceAPI.Controllers
             return Ok(effects);
         }
 
+        [Authorize(Roles = "admin")]
         [HttpPost("{id}/transfer-to-auction")]
         public async Task<IActionResult> TransferToAuction(Guid id)
         {
@@ -224,6 +232,7 @@ namespace auctionServiceAPI.Controllers
             return Ok("Effect successfully transferred to auction");
         }
 
+        [Authorize(Roles = "admin")]
         [HttpPost("{id}/mark-as-sold")]
         public async Task<IActionResult> MarkAsSold(Guid id, [FromBody] SoldEffectDto soldDto)
         {
